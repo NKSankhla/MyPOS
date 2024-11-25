@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     const root = document.getElementById("root");
   
-    const menu = [
+    let menu = [
       { id: 1, name: "Samosa", price: 20, unitType: "qty" },
       { id: 2, name: "Kachori", price: 20, unitType: "qty" },
       { id: 3, name: "Shahi Samosa", price: 25, unitType: "qty" },
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </ul>
           <div class="cart-total">
             <h3>Total: ₹${cart.reduce((sum, item) => sum + item.qty * item.price, 0)}</h3>
-            <button class="generate-btn">Generate Invoice</button>
+            <button class="print-btn">Print Invoice</button>
           </div>
         </div>
       `;
@@ -105,6 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         )
                         .join("")}
                     </ul>
+                    <button class="reprint-btn" data-index="${index}">Print</button>
                   </li>`
               )
               .join("")}
@@ -117,7 +118,27 @@ document.addEventListener("DOMContentLoaded", () => {
       return `
         <div class="update-menu">
           <h2>Update Menu</h2>
-          <p>Feature coming soon: Add or modify menu items here.</p>
+          <form id="menu-form">
+            <input type="text" id="item-name" placeholder="Item Name" required />
+            <input type="number" id="item-price" placeholder="Price" required />
+            <select id="unit-type">
+              <option value="qty">Quantity</option>
+              <option value="weight">Weight</option>
+            </select>
+            <button type="submit">Add/Update Item</button>
+          </form>
+          <h3>Current Menu</h3>
+          <ul>
+            ${menu
+              .map(
+                (item) =>
+                  `<li>
+                    ${item.name} - ₹${item.price}${item.unitType === "weight" ? "/kg" : ""}
+                    <button class="edit-btn" data-id="${item.id}">Edit</button>
+                  </li>`
+              )
+              .join("")}
+          </ul>
         </div>
       `;
     }
@@ -170,20 +191,77 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       });
   
-      document.querySelector(".generate-btn")?.addEventListener("click", () => {
+      document.querySelector(".print-btn")?.addEventListener("click", () => {
         if (cart.length === 0) return;
   
         const newInvoice = {
           items: [...cart],
           total: cart.reduce((sum, item) => sum + item.qty * item.price, 0),
+          billNo: new Date().toLocaleDateString("en-GB").replace(/\//g, "") + " " + new Date().toLocaleTimeString().replace(/:/g, "").slice(0, 4),
+          date: new Date(),
         };
   
         invoices.push(newInvoice);
+        printInvoice(newInvoice);
         cart.length = 0;
         render();
       });
+  
+      document.querySelectorAll(".reprint-btn").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const index = parseInt(e.target.dataset.index);
+          printInvoice(invoices[index]);
+        });
+      });
+  
+      document.querySelector("#menu-form")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const name = document.querySelector("#item-name").value;
+        const price = parseInt(document.querySelector("#item-price").value);
+        const unitType = document.querySelector("#unit-type").value;
+  
+        const existingItem = menu.find((item) => item.name === name);
+        if (existingItem) {
+          existingItem.price = price;
+          existingItem.unitType = unitType;
+        } else {
+          menu.push({ id: menu.length + 1, name, price, unitType });
+        }
+        render();
+      });
+  
+      document.querySelectorAll(".edit-btn").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const id = parseInt(e.target.dataset.id);
+          const item = menu.find((menuItem) => menuItem.id === id);
+          document.querySelector("#item-name").value = item.name;
+          document.querySelector("#item-price").value = item.price;
+          document.querySelector("#unit-type").value = item.unitType;
+        });
+      });
+    }
+  
+    function printInvoice(invoice) {
+      const printWindow = window.open("", "", "width=600,height=400");
+      printWindow.document.write("<pre style='font-family:monospace;'>");
+      printWindow.document.write(`
+        Invoice No: ${invoice.billNo}
+        Date: ${invoice.date.toLocaleString()}
+        ----------------------------
+        Items:
+        ${invoice.items
+          .map(
+            (item) => `${item.name} x ${item.qty} - ₹${item.qty * item.price}`
+          )
+          .join("\n")}
+        ----------------------------
+        Total: ₹${invoice.total}
+        ----------------------------
+      `);
+      printWindow.document.write("</pre>");
+      printWindow.print();
     }
   
     render();
   });
-  
+    
