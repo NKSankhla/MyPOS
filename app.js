@@ -245,23 +245,38 @@ document.addEventListener("DOMContentLoaded", () => {
       const printWindow = window.open("", "", "width=600,height=400");
       printWindow.document.write("<pre style='font-family:monospace;'>");
       printWindow.document.write(`
-        Invoice No: ${invoice.billNo}
-        Date: ${invoice.date.toLocaleString()}
-        ----------------------------
-        Items:
-        ${invoice.items
-          .map(
-            (item) => `${item.name} x ${item.qty} - ₹${item.qty * item.price}`
-          )
-          .join("\n")}
-        ----------------------------
-        Total: ₹${invoice.total}
-        ----------------------------
+                 Rajshahi Namkeen
+        Begum Bazar Hyderabad 500012
+    Bill No. ${invoice.billNo}
+    Date: ${invoice.date.toLocaleString()}
+    ------------------------------------
+    Item Name       Rate    Qty   Amount
+    ------------------------------------
+    `);
+    
+      // Iterate over items and print them with proper alignment
+      invoice.items.forEach((item, index) => {
+        const itemName = item.name.padEnd(15, ' ');  // Align item name
+        const rate = `₹ ${item.price}`.padStart(8, ' ');  // Right-align rate
+        const qty = item.qty.toString().padStart(6, ' ');  // Right-align quantity
+        const amount = `₹ ${item.qty * item.price}`.padStart(8, ' ');  // Right-align amount
+    
+        // Print the item details
+        printWindow.document.write(`
+    ${itemName}${rate}${qty}${amount}
+    `);
+      });
+    
+      printWindow.document.write(`
+    ------------------------------------
+                         Total: Rs ${invoice.total.toString().padStart(3, ' ')}
+    ------------------------------------
+           Thank You Visit Again
       `);
       printWindow.document.write("</pre>");
       printWindow.print();
     }
-  
+     
     render();
   });
     
